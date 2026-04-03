@@ -22,12 +22,24 @@ def ollama_request(prompt: str):
 def decide_department(symptoms: str):
     prompt = f"""
     You are a medical assistant. Return a JSON object with the key "Guess".
-    Departments: Cardiology, Pediatric Allergy, Pediatric Surgery, Anesthesiology, Neurosurgery, Nutrition and Dietetics, Oral and Dental Health, General Surgery.
-    
-    Patient symptoms: {symptoms}
-    
+    Departments:Cardiology
+                Pediatric Allergy
+                Pediatric Surgery
+                Anesthesiology
+                Neurosurgery
+                Nutrition and Dietetics
+                Oral and Dental Health
+                General Surgery
+                Pediatric Endocrinology
+                Urology
+                Dermatology
+                Neurology
+
     Return ONLY the JSON.
     Example output: {{"Guess": "Cardiology"}}
+    Example output if the symptoms are not clear: {{"Guess": "General Surgery"}}
+
+    Patient symptoms: {symptoms}
     """
     return ollama_request(prompt)
 
@@ -47,7 +59,7 @@ def list_of_doctors(department: str) -> list:
 #    guess = decide_department(prompt)
 #    department = guess.get("Guess")
 
-guess = decide_department("I cant masturbate.")
+guess = decide_department("My tooth hurts and I have a fever.")
 print(guess)
 
 try:
