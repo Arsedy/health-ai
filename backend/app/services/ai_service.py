@@ -1,9 +1,12 @@
-from fastapi import FastAPI
 import json
+from pydantic import BaseModel
 import requests
+from pathlib import Path
+
+DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "hospital-data.json"
 
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
-app = FastAPI()
+
 
 #AI model request function
 def ollama_request(prompt: str):
@@ -21,7 +24,7 @@ def ollama_request(prompt: str):
 
 def decide_department(symptoms: str):
     prompt = f"""
-    You are a medical assistant. Return a JSON object with the key "Guess".
+    You are a medical assistant. Return a JSON object with the key "Department".
     Departments:Cardiology
                 Pediatric Allergy
                 Pediatric Surgery
@@ -36,8 +39,8 @@ def decide_department(symptoms: str):
                 Neurology
 
     Return ONLY the JSON.
-    Example output: {{"Guess": "Cardiology"}}
-    Example output if the symptoms are not clear: {{"Guess": "General Surgery"}}
+    Example output: {{"Department": "Cardiology"}}
+    Example output if the symptoms are not clear: {{"Department": "General Surgery"}}
 
     Patient symptoms: {symptoms}
     """
@@ -45,7 +48,7 @@ def decide_department(symptoms: str):
 
 
 def list_of_doctors(department: str) -> list: 
-    with open("data/hospital-data.json", "r") as f:
+    with open(DATA_DIR, "r") as f:
         data = json.load(f)
     departments = data.get("departments", [])
     for dept in departments:
@@ -53,18 +56,24 @@ def list_of_doctors(department: str) -> list:
             return dept.get("doctors", [])
     return []
 
-#@app.post("/")
-#async def patient_info(prompt: str):
-#    #taking the symptoms from the user and sending it to the function that will decide the department.
-#    guess = decide_department(prompt)
-#    department = guess.get("Guess")
+class Message(BaseModel):
+    prompt: str
 
-guess = decide_department("My tooth hurts and I have a fever.")
-print(guess)
 
-try:
-    guess_dict = json.loads(guess)
-except json.JSONDecodeError:
-    print("Failed to parse the response as JSON.")
+async def doctor_recommendation(symptoms: str) -> list:
+    department = await decide_department(symptoms)
+    print(f"AI recommended department log : {department}")
+    try:
+        department = json.loads(department).get("Department")
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse department from AI response."}
 
-print(list_of_doctors(guess_dict.get("Guess")))
+    doctors = list_of_doctors(department)
+
+    result ={
+        "department": department,
+        "reason": symptoms,
+        "suggested_doctors": doctors
+        }
+    
+    return result
