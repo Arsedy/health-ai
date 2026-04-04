@@ -60,10 +60,11 @@ Before you begin, ensure you have the following installed:
 
 ### Starting the Application
 
-Run the FastAPI development server:
+Navigate to the backend directory and run the FastAPI development server:
 
 ```bash
-fastapi dev app.py
+cd backend
+fastapi dev app/main.py
 ```
 
 The API will be available at `http://localhost:8000`
@@ -82,7 +83,6 @@ curl -X POST http://localhost:8000/analyze \
 {
   "symptom": "I have a headache",
   "department": "Neurology",
-  "confidence": 0.95,
   "doctors": [
     {"id": 1, "name": "Dr. Smith", "specialty": "Headache Specialist"},
     {"id": 2, "name": "Dr. Johnson", "specialty": "Neurologist"}
@@ -94,11 +94,23 @@ curl -X POST http://localhost:8000/analyze \
 
 ```
 health-ai/
-├── app.py                 # Main FastAPI application
-├── bot-service/
-│   └── bot.py            # Bot logic and AI integration
-├── data/
-│   └── hospital-data.json # Hospital departments and doctors database
+├── README.md
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py          # Main FastAPI application
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   ├── router.py
+│   │   │   └── endpoints/
+│   │   │       ├── __init__.py
+│   │   │       └── analyze.py
+│   │   └── services/
+│   │       ├── __init__.py
+│   │       └── ai_service.py # AI integration service
+│   └── data/
+│       └── hospital-data.json # Hospital departments and doctors database
+```
 ├── .venv/                 # Virtual environment (gitignored)
 ├── .gitignore            # Git ignore file
 └── README.md             # This file
