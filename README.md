@@ -17,7 +17,6 @@ An intelligent AI-powered application that analyzes patient symptoms and recomme
 - **PostgreSQL** - Relational database (via psycopg2)
 - **Ollama** - Local LLM engine for AI-powered analysis
 - **Pandas & NumPy** - Data processing and numerical computations
-- **Scikit-learn** - Machine learning library for analysis
 - **Python 3.8+** - Core programming language
 - **Uvicorn** - ASGI server for running FastAPI applications
 - **Docker & Docker Compose** - Containerization and orchestration
