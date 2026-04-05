@@ -1,50 +1,66 @@
 import json
 from pydantic import BaseModel
-import requests
+import httpx
 from pathlib import Path
+import os
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "hospital-data.json"
 
-OLLAMA_API_URL = "http://localhost:11434/api/generate"
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434") # Use environment variable or default to localhost
+OLLAMA_API_URL = f"{OLLAMA_BASE_URL}/api/generate"
 
 
 #AI model request function
-def ollama_request(prompt: str):
+async  def ollama_request(prompt: str):
     payload = {
-    'model': 'qwen2.5:7b-instruct-q4_K_M',
-    'prompt': prompt,
-    'stream' : False,
-    'format' : 'json',
-    'options': {
-        'temperature': 0
-        }
+        'model': 'qwen2.5:7b-instruct-q4_K_M',
+        'prompt': prompt,
+        'stream': False,
+        'format': 'json',
+        'options': {'temperature': 0}
     }
-    response = requests.post(OLLAMA_API_URL, json=payload)
-    return response.json().get('response')
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        try:
+            response = await client.post(OLLAMA_API_URL, json=payload)
+            response.raise_for_status()
+            
+            full_response = response.json()
+            raw_content = full_response.get('response', '{}')
+           
+            if isinstance(raw_content, str):
+                return json.loads(raw_content)
+            return raw_content
+            
+        except httpx.ConnectError:
+            return {"error": f"Failed to connect to Ollama at : {OLLAMA_API_URL}"}
+        except Exception as e:
+            return {"error": str(e)}
+    
 
-def decide_department(symptoms: str):
+async def analyze_symptom(symptoms: str):
+    valid_departments = [
+        "Cardiology", "Pediatric Allergy", "Pediatric Surgery", 
+        "Anesthesiology", "Neurosurgery", "Nutrition and Dietetics", 
+        "Oral and Dental Health", "General Surgery", 
+        "Pediatric Endocrinology", "Urology", "Dermatology", "Neurology"
+    ]
+    
     prompt = f"""
-    You are a medical assistant. Return a JSON object with the key "Department".
-    Departments:Cardiology
-                Pediatric Allergy
-                Pediatric Surgery
-                Anesthesiology
-                Neurosurgery
-                Nutrition and Dietetics
-                Oral and Dental Health
-                General Surgery
-                Pediatric Endocrinology
-                Urology
-                Dermatology
-                Neurology
+    You are a medical triage assistant. Your ONLY job is to map symptoms to one of the specific departments listed below.
+    
+    ALLOWED DEPARTMENTS:
+    {", ".join(valid_departments)}
 
-    Return ONLY the JSON.
-    Example output: {{"Department": "Cardiology"}}
-    Example output if the symptoms are not clear: {{"Department": "General Surgery"}}
+    STRICT RULES:
+    1. You MUST choose a department ONLY from the ALLOWED DEPARTMENTS list above.
+    2. Do NOT create new department names.
+    3. If you are unsure or the department is not in the list, default to "General Surgery".
+    4. Return a JSON object with "Department" and "Importance" (1-10) keys.
 
     Patient symptoms: {symptoms}
     """
-    return ollama_request(prompt)
+
+    return await ollama_request(prompt)
 
 
 def list_of_doctors(department: str) -> list: 
@@ -61,19 +77,32 @@ class Message(BaseModel):
 
 
 async def doctor_recommendation(symptoms: str) -> list:
-    department = await decide_department(symptoms)
-    print(f"AI recommended department log : {department}")
+    symptom_analysis = await analyze_symptom(symptoms)
+    print(f"AI Raw response: {symptom_analysis}")
+
+    if not symptom_analysis or "error" in symptom_analysis:
+        return {
+            "department": "Unknown",
+            "importance": 0,
+            "reason": symptoms,
+            "suggested_doctors": [],
+            "status_message": "The model failed to analyze the symptoms. Please try again later.",
+            "error": symptom_analysis
+        }
+
     try:
-        department = json.loads(department).get("Department")
-    except json.JSONDecodeError:
-        return {"error": "Failed to parse department from AI response."}
+        department = symptom_analysis.get("Department")
+        importance = symptom_analysis.get("Importance")
+    except AttributeError:
+        return {"error": "Failed to parse department or importance from AI response."}
 
     doctors = list_of_doctors(department)
 
-    result ={
+    return {
         "department": department,
+        "importance": importance,
         "reason": symptoms,
         "suggested_doctors": doctors
         }
     
-    return result
+

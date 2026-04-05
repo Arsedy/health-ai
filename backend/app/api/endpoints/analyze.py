@@ -5,5 +5,5 @@ router = APIRouter()
 
 @router.post("/analyze")
 async def analyze_symptoms(message: Message):
-    result = doctor_recommendation(message.prompt)
+    result = await doctor_recommendation(message.prompt)
     return result

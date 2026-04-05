@@ -13,9 +13,14 @@ An intelligent AI-powered application that analyzes patient symptoms and recomme
 ## Tech Stack
 
 - **FastAPI** - Modern web framework for building APIs
+- **SQLModel** - SQL ORM/query builder with type hints
+- **PostgreSQL** - Relational database (via psycopg2)
 - **Ollama** - Local LLM engine for AI-powered analysis
+- **Pandas & NumPy** - Data processing and numerical computations
+- **Scikit-learn** - Machine learning library for analysis
 - **Python 3.8+** - Core programming language
 - **Uvicorn** - ASGI server for running FastAPI applications
+- **Docker & Docker Compose** - Containerization and orchestration
 
 ## Prerequisites
 
@@ -49,7 +54,7 @@ Before you begin, ensure you have the following installed:
 
 4. **Install dependencies:**
    ```bash
-   pip install fastapi uvicorn ollama
+   pip install -r backend/requirements.txt
    ```
 
 5. **Ensure Ollama is running:**
@@ -69,26 +74,77 @@ fastapi dev app/main.py
 
 The API will be available at `http://localhost:8000`
 
-### Example Request
+## Docker Deployment
 
+### Using Docker Compose
+
+The project includes a `docker-compose.yml` file for easy deployment with all dependencies.
+
+```bash
+docker-compose up
+```
+
+The API will be available at `http://localhost:8000`
+
+### Building Docker Image
+
+```bash
+docker build -t health-ai:latest backend/
+```
+
+### Running with Docker
+
+```bash
+docker run -p 8000:8000 -e OLLAMA_HOST=http://host.docker.internal:11434 health-ai:latest
+```
+
+**Environment Variables:**
+- `OLLAMA_HOST` - URL to Ollama service (default: http://localhost:11434)
+
+#### POST `/analyze`
+
+Analyzes patient symptoms and recommends the appropriate department with available doctors.
+
+**Request:**
 ```bash
 curl -X POST http://localhost:8000/analyze \
   -H "Content-Type: application/json" \
-  -d '{"symptom": "I have a headache"}'
+  -d '{"symptoms": "I have a headache and dizziness"}'
 ```
 
-### Expected Response
-
+**Request Body:**
 ```json
 {
-  "symptom": "I have a headache",
+  "symptoms": "string - Description of patient symptoms"
+}
+```
+
+**Response:**
+```json
+{
   "department": "Neurology",
-  "doctors": [
-    {"id": 1, "name": "Dr. Smith", "specialty": "Headache Specialist"},
-    {"id": 2, "name": "Dr. Johnson", "specialty": "Neurologist"}
+  "importance": "high",
+  "reason": "Symptoms suggest neurological condition",
+  "suggested_doctors": [
+    {
+      "id": 1,
+      "name": "Dr. Smith",
+      "specialty": "Headache Specialist"
+    },
+    {
+      "id": 2,
+      "name": "Dr. Johnson",
+      "specialty": "Neurologist"
+    }
   ]
 }
 ```
+
+**Response Fields:**
+- `department` (string) - Recommended hospital department
+- `importance` (string) - Severity level of the condition (low/medium/high)
+- `reason` (string) - Explanation for the recommendation
+- `suggested_doctors` (array) - List of available doctors in the department
 
 ## Project Structure
 

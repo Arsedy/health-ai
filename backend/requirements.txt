@@ -1,0 +1,9 @@
+fastapi[standard]
+sqlmodel
+psycopg2-binary
+uvicorn[standard]
+pydantic-settings
+python-dotenv
+pandas
+numpy
+requests
