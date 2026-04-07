@@ -1,10 +1,9 @@
 from fastapi import FastAPI
 from app.api.router import router
 from app.models.schemas import SQLModel 
-from app.models.database import engine, seed_data
+from app.models.database import engine
+from app.services.db_service import seed_database_if_empty
 from contextlib import asynccontextmanager
-
-
 
 
 def create_db_and_tables():
@@ -13,7 +12,7 @@ def create_db_and_tables():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
-    seed_data(engine)  # If empty, seed the database with initial data
+    seed_database_if_empty()
     yield
     pass
 

@@ -6,8 +6,8 @@ class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     username: str
     symptoms: str
-    # Bir kullanıcının birden fazla geçmiş tavsiyesi olabilir
     recommendations: List["Recommendation"] = Relationship(back_populates="user")
+    reservations: List["Reservation"] = Relationship(back_populates="patient")
 
 class Recommendation(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -24,7 +24,6 @@ class Department(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
     
-    # Department -> Doctor ilişkisi (Bir departmanda çok doktor olur)
     doctors: List["Doctor"] = Relationship(back_populates="department")
 
 class Doctor(SQLModel, table=True):
@@ -34,17 +33,16 @@ class Doctor(SQLModel, table=True):
     last_name: str
     experience: int
     
-    # Doctor -> Department ilişkisi
     department_id: Optional[int] = Field(default=None, foreign_key="department.id")
     department: Optional[Department] = Relationship(back_populates="doctors")
     
-    # Rezervasyonlar için ilişki (İlerisi için)
     reservations: List["Reservation"] = Relationship(back_populates="doctor")
 
 class Reservation(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    patient_name: str
+    patient_id: int = Field(foreign_key="user.id")
+    patient: Optional[User] = Relationship(back_populates="reservations")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     appointment_time: datetime = Field(index=True)
     doctor_id: int = Field(foreign_key="doctor.id")
-    doctor: Doctor = Relationship(back_populates="reservations")
+    doctor: Optional[Doctor] = Relationship(back_populates="reservations")

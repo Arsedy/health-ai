@@ -1,12 +1,10 @@
 import json
 from pydantic import BaseModel
 import httpx
-from pathlib import Path
 import os
+from app.services.db_service import list_doctors_by_department
 
-DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "hospital-data.json"
-
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434") # Use environment variable or default to localhost
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_API_URL = f"{OLLAMA_BASE_URL}/api/generate"
 
 
@@ -46,7 +44,7 @@ async def analyze_symptom(symptoms: str):
     ]
     
     prompt = f"""
-    You are a medical triage assistant. Your ONLY job is to map symptoms to one of the specific departments listed below.
+    You are a medical triage assistant. Your ONLY job is to map symptoms to one of the specific departments listed below and why.
     
     ALLOWED DEPARTMENTS:
     {", ".join(valid_departments)}
@@ -55,7 +53,7 @@ async def analyze_symptom(symptoms: str):
     1. You MUST choose a department ONLY from the ALLOWED DEPARTMENTS list above.
     2. Do NOT create new department names.
     3. If you are unsure or the department is not in the list, default to "General Surgery".
-    4. Return a JSON object with "Department" and "Importance" (1-10) keys.
+    4. Return a JSON object with "Department" , "Importance" (1-10) and "Reason" (small sentence) keys.
 
     Patient symptoms: {symptoms}
     """
@@ -63,14 +61,8 @@ async def analyze_symptom(symptoms: str):
     return await ollama_request(prompt)
 
 
-def list_of_doctors(department: str) -> list: 
-    with open(DATA_DIR, "r") as f:
-        data = json.load(f)
-    departments = data.get("departments", [])
-    for dept in departments:
-        if dept.get("name").lower() == department.lower():
-            return dept.get("doctors", [])
-    return []
+def list_of_doctors(department: str) -> list:
+    return list_doctors_by_department(department)
 
 class Message(BaseModel):
     prompt: str
@@ -93,6 +85,7 @@ async def doctor_recommendation(symptoms: str) -> list:
     try:
         department = symptom_analysis.get("Department")
         importance = symptom_analysis.get("Importance")
+        reason = symptom_analysis.get("Reason")
     except AttributeError:
         return {"error": "Failed to parse department or importance from AI response."}
 
@@ -101,7 +94,7 @@ async def doctor_recommendation(symptoms: str) -> list:
     return {
         "department": department,
         "importance": importance,
-        "reason": symptoms,
+        "reason": reason,
         "suggested_doctors": doctors
         }
     

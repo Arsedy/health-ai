@@ -121,19 +121,30 @@ curl -X POST http://localhost:8000/analyze \
 **Response:**
 ```json
 {
-  "department": "Neurology",
-  "importance": "high",
-  "reason": "Symptoms suggest neurological condition",
+  "department": "Pediatric Surgery",
+  "importance": 10,
+  "reason": "The symptoms of difficulty breathing and a continuous fever in a child require immediate attention to rule out serious conditions such as infections or obstructions.",
   "suggested_doctors": [
     {
-      "id": 1,
-      "name": "Dr. Smith",
-      "specialty": "Headache Specialist"
+      "id": 8,
+      "title": "Specialist Dr.",
+      "first_name": "Jaclyn",
+      "last_name": "Danielot",
+      "experience": 8
     },
     {
-      "id": 2,
-      "name": "Dr. Johnson",
-      "specialty": "Neurologist"
+      "id": 9,
+      "title": "Asst. Prof.",
+      "first_name": "Aaron",
+      "last_name": "Race",
+      "experience": 17
+    },
+    {
+      "id": 10,
+      "title": "Assoc. Prof.",
+      "first_name": "Correna",
+      "last_name": "Aldersey",
+      "experience": 18
     }
   ]
 }
